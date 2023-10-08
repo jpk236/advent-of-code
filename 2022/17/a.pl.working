@@ -1,0 +1,144 @@
+#!/usr/bin/perl
+
+use strict;
+use List::Util qw(min max sum);
+use Time::HiRes qw(usleep);
+
+my $ansiClearScreen = "\e[2J";
+my $ansiCursorHome = "\e[H";
+sub ansiCursorTo ($$) {
+    my ($x, $y) = @_;
+    ++$x; ++$y;
+    return "\e[$y;${x}H";
+}
+
+my @shapes = (
+    [ [0,0], [1,0], [2,0], [3,0] ],         # Horizontal line
+    [ [0,1], [1,0], [1,1], [1,2], [2,1] ],  # Plus
+    [ [0,0], [1,0], [2,0], [2,1], [2,2] ],  # Backwards L
+    [ [0,0], [0,1], [0,2], [0,3] ],         # Vertical line
+    [ [0,0], [0,1], [1,0], [1,1] ]          # Square
+);
+
+my @chamber;   # the chamber is a 2D grid of 0s and 1s, Y first, then X
+my $chamberWidth = 7;
+
+sub checkCollision ($$$) {
+    # Check if a shape at a given position collides with anything in the
+    # chamber.  Return 1 if it does, 0 if it doesn't, and 1 if it's off
+    # the edge of the chamber.
+    my ($x, $y, $shape) = @_;
+    for my $coord (@$shape) {
+        my ($dx, $dy) = @$coord;
+        my ($px, $py) = ($x+$dx, $y+$dy);
+        # print "Checking ($dx,$dy) -> ($px, $py)\n";
+        return 1 if $px < 0 || $py < 0 || $px >= $chamberWidth;
+        return 1 if $chamber[$py][$px];
+    }
+    return 0;
+}
+
+sub placeShape ($$$) {
+    # Place a shape at a given position in the chamber.
+    my ($x, $y, $shape) = @_;
+    die "Can't place shape at $x, $y" if checkCollision($x, $y, $shape);
+    for my $coord (@$shape) {
+        my ($dx, $dy) = @$coord;
+        my ($px, $py) = ($x+$dx, $y+$dy);
+        # print "Placing shape at ($x,$y) => ($dx,$dy) -> ($px, $py)\n";
+        $chamber[$py][$px] = 1;
+    }
+    return 1;
+}
+
+sub unplaceShape ($$$) {
+    # Place a shape at a given position in the chamber.
+    my ($x, $y, $shape) = @_;
+    for my $coord (@$shape) {
+        my ($dx, $dy) = @$coord;
+        my ($px, $py) = ($x+$dx, $y+$dy);
+        $chamber[$py][$px] = 0;
+    }
+    return 1;
+}
+
+sub topY ($$) {
+    # Return the top Y coordinate of a shape at a given position
+    my ($y, $shape) = @_;
+    my $topY = 0;
+    for my $coord (@$shape) {
+        my ($dx, $dy) = @$coord;
+        $topY = max($topY, $y+$dy);
+    }
+    return $topY;
+}
+
+
+my $maxLinesToDraw = 22;
+sub drawChamber () {
+    print $ansiCursorHome;
+    my $linesToDraw = min($maxLinesToDraw, scalar @chamber);
+    for (my $i = 1; $i <= $linesToDraw; ++$i) {
+        my $row = $chamber[-$i];
+        my @row = $row ? @$row : ();
+        $row[$chamberWidth - 1] //= 0;
+        print "|", join("", map { $_ ? "#" : "." } @row), "|\n";
+    }
+    print "+", "-" x $chamberWidth, "+\n" if $linesToDraw < $maxLinesToDraw;
+    usleep(10000);
+}
+
+undef $/;
+my $test = 0;
+
+open (FILE, "input.txt")        if ($test == 0);
+open (FILE, "input_test.txt")   if ($test == 1);
+my $input = <FILE>;
+close (FILE);
+chomp $input;
+$input =~ tr/<>//cd;
+my @winds = split //, $input;
+my @moreWinds = @winds;
+print "There are ", scalar @winds, " winds\n";
+
+my $currentRock = 0;
+my $rocksToFall = 2022;
+my $topY = -1;
+
+$| = 1;
+print $ansiClearScreen;
+
+for (my $i = 0; $i < $rocksToFall; ++$i) {
+    my ($x, $y) = (2, $topY + 4);
+    my $thisRock = $shapes[$currentRock++];
+    $currentRock = 0 if $currentRock > $#shapes;
+    placeShape($x, $y, $thisRock);
+    drawChamber();
+    my $falling = 1;
+    while ($falling) {
+        unplaceShape($x, $y, $thisRock);
+        # First we're blown by the winds
+        my $wind = shift @winds;
+        @winds = @moreWinds unless @winds;
+        if ($wind eq '<') {
+            --$x;
+            ++$x if checkCollision($x, $y, $thisRock);
+        } elsif ($wind eq '>') {
+            ++$x;
+            --$x if checkCollision($x, $y, $thisRock);
+        } else {
+            die "Unknown wind direction $wind";
+        }
+        # Then we fall
+        --$y;
+        if (checkCollision($x, $y, $thisRock)) {
+            ++$y;
+            $falling = 0;
+        }
+        placeShape($x, $y, $thisRock);
+        drawChamber();
+    }
+    $topY = max topY($y, $thisRock), $topY;
+    print ansiCursorTo(15, 5), "Rock ", $i+1, " of $rocksToFall\n";
+    print ansiCursorTo(15, 7), "Top Y is ", $topY+1, "\n";
+}

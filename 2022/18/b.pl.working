@@ -1,0 +1,86 @@
+#!/usr/bin/perl
+use Data::Dumper;
+my($t,$n,$mx,$my,$mz,@grid)=(0,0,0,0,0);
+
+my $test = 1;
+
+open (FILE, "input.txt")        if ($test == 0);
+open (FILE, "input_test.txt")   if ($test == 1);
+
+## Read data in - work out the range and created the grid!
+$grid[$_->[0]+1][$_->[1]+1][$_->[2]+1]='#',
+$_->[0] > $mx && ($mx = $_->[0]),
+$_->[1] > $my && ($my = $_->[1]),
+$_->[2] > $mz && ($mz = $_->[2]) for
+   my @rows = map { chomp;[map{int$_}split/,/] } <FILE>;
+$mx+=2,$my+=2,$mz+=2,$n=6*@rows;
+close (FILE);
+
+print "maxY: |" , $my , "|\n";
+print "maxX: |" , $mx , "|\n";
+print "maxZ: |" , $mz , "|\n";
+
+## Part 1 - if the neighbour of a rock is also a rock we remove
+## 1 face We use the grid we set up for Part 2 to do this MUCH
+## quicker than scanning all the pairs of cubes
+for(@rows){
+  $n-- if $grid[$_->[0]  ][$_->[1]+1][$_->[2]+1];
+  $n-- if $grid[$_->[0]+1][$_->[1]  ][$_->[2]+1];
+  $n-- if $grid[$_->[0]+1][$_->[1]+1][$_->[2]  ];
+  $n-- if $grid[$_->[0]+2][$_->[1]+1][$_->[2]+1];
+  $n-- if $grid[$_->[0]+1][$_->[1]+2][$_->[2]+1];
+  $n-- if $grid[$_->[0]+1][$_->[1]+1][$_->[2]+2];
+}
+
+## Part 2 - just our trusty flood fill queue - we find a face if we
+## try and move from an "outside space" to rock...
+
+my @q = ([0,0,0]);
+while( $_ = shift @q ) {
+  #print Dumper \@q;
+  #print "\n";
+  my($x,$y,$z) = @{$_};
+  print "working on ($y,$x,$z) = |".($grid[$x][$y][$z] || '')."|\n";
+  #$t++ if (my $v = $grid[$x][$y][$z]||0) eq '#';
+  my $v = $grid[$x][$y][$z]||0;
+  if ($v eq '#') {
+    $t++;
+    print "adding to 't' at ($x,$y,$z); \$grid[$x][$y][$z] = |".($grid[$x][$y][$z])."|; \$v = |$v|; \$t = |$t|\n";
+    print "\t \$grid[$x][$y][$z]: |" . $grid[$x][$y][$z] . "|\n";
+    print "\t\t x+1 \$grid[".($x+1)."][$y][$z]: |" . $grid[$x+1][$y][$z] . "|\n";
+    print "\t\t x-1 \$grid[".($x-1)."][$y][$z]: |" . $grid[$x-1][$y][$z] . "|\n";
+    print "\t\t y+1 \$grid[$x][".($y+1)."][$z]: |" . $grid[$x][$y+1][$z] . "|\n";
+    print "\t\t y-1 \$grid[$x][".($y-1)."][$z]: |" . $grid[$x][$y-1][$z] . "|\n";
+    print "\t\t z+1 \$grid[$x][$y][".($z+1)."]: |" . $grid[$x][$y][$z+1] . "|\n";
+    print "\t\t z-1 \$grid[$x][$y][".($z-1)."]: |" . $grid[$x][$y][$z-1] . "|\n";
+  }
+  next if $v;
+  $grid[$x][$y][$z]='@';
+  #print "\t |".($grid[$x][$y][$z] || '')."|\n";
+  push @q,$z ? [$x,$y,$z-1] : (), $z<$mz ? [$x,$y,$z+1] : (),
+          $y ? [$x,$y-1,$z] : (), $y<$my ? [$x,$y+1,$z] : (),
+          $x ? [$x-1,$y,$z] : (), $x<$mx ? [$x+1,$y,$z] : ();
+
+  #print Dumper \@q;
+  #print "\n";
+  #my $gak = <>;
+}
+
+my $cnt = 0;
+for (my $y = 0; $y < scalar @grid; $y++) {
+    if (defined($grid[$y])) {
+        for (my $x = 0; $x < scalar @{$grid[$y]}; $x++) {
+            if (defined($grid[$y][$x])) {
+                for (my $z = 0; $z < scalar @{$grid[$y][$x]}; $z++) {
+                    print "\$grid[$y][$x][$z]: |" . ($grid[$y][$x][$z] || '') . "|\n";
+                    if (defined($grid[$y][$x][$z]) && $grid[$y][$x][$z] eq '#') {
+                        $cnt++;
+                    }
+                }
+            }
+        }
+    }
+}
+
+print "$n\n$t\n";
+print "cnt = $cnt\n";

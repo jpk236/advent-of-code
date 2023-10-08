@@ -1,0 +1,44 @@
+#!/usr/bin/perl
+my($t,$n,$mx,$my,$mz,@grid)=(0,0,0,0,0);
+
+my $test = 0;
+
+open (FILE, "input.txt")        if ($test == 0);
+open (FILE, "input_test.txt")   if ($test == 1);
+
+## Read data in - work out the range and created the grid!
+$grid[$_->[0]+1][$_->[1]+1][$_->[2]+1]=2,
+$_->[0] > $mx && ($mx = $_->[0]),
+$_->[1] > $my && ($my = $_->[1]),
+$_->[2] > $mz && ($mz = $_->[2]) for
+   my @rows = map { chomp;[map{int$_}split/,/] } <FILE>;
+$mx+=2,$my+=2,$mz+=2,$n=6*@rows;
+close (FILE);
+
+## Part 1 - if the neighbour of a rock is also a rock we remove
+## 1 face We use the grid we set up for Part 2 to do this MUCH
+## quicker than scanning all the pairs of cubes
+for(@rows){
+  $n-- if $grid[$_->[0]  ][$_->[1]+1][$_->[2]+1];
+  $n-- if $grid[$_->[0]+1][$_->[1]  ][$_->[2]+1];
+  $n-- if $grid[$_->[0]+1][$_->[1]+1][$_->[2]  ];
+  $n-- if $grid[$_->[0]+2][$_->[1]+1][$_->[2]+1];
+  $n-- if $grid[$_->[0]+1][$_->[1]+2][$_->[2]+1];
+  $n-- if $grid[$_->[0]+1][$_->[1]+1][$_->[2]+2];
+}
+
+## Part 2 - just our trusty flood fill queue - we find a face if we
+## try and move from an "outside space" to rock...
+
+my @q = ([0,0,0]);
+while( $_ = shift @q ) {
+  my($x,$y,$z) = @{$_};
+  $t++ if (my $v = $grid[$x][$y][$z]||0) == 2;
+  next if $v;
+  $grid[$x][$y][$z]=1;
+  push @q,$z ? [$x,$y,$z-1] : (), $z<$mz ? [$x,$y,$z+1] : (),
+          $y ? [$x,$y-1,$z] : (), $y<$my ? [$x,$y+1,$z] : (),
+          $x ? [$x-1,$y,$z] : (), $x<$mx ? [$x+1,$y,$z] : ();
+}
+
+print "$n\n$t\n";

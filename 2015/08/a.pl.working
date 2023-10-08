@@ -1,0 +1,42 @@
+#!/usr/bin/perl
+
+use warnings;
+use strict;
+
+use Data::Dumper;
+
+my $test = 0;
+
+open (FILE, "input.txt")        if ($test == 0);
+open (FILE, "input_test.txt")   if ($test == 1);
+chomp(my @input = <FILE>);
+close (FILE);
+
+my $total = 0;
+my $totalLiteral = 0;
+my $totalMemory = 0;
+
+my $total_a;
+my $total_b;
+foreach (@input) {
+    my $len = length $_;
+    my ($a,$b);
+
+    $a = $b = $_;
+    $a =~ s{^"(.*)"$}{$1};
+    $a =~ s{\\\\}{#}g;
+    $a =~ s{\\"}{#}g;
+    $a =~ s{\\x[a-fA-F0-9][a-fA-F0-9]}{#}g;
+
+    $b =~ s{\\}{\\\\}g;
+    $b =~ s{"}{\\"}g;
+
+    my $len_a = length($a);
+    my $len_b = length($b) + 2;
+
+    $total_a += $len - $len_a;
+    $total_b += $len_b - $len;
+}
+
+print "$total_a\n";
+print "$total_b\n";

@@ -1,0 +1,146 @@
+#!/usr/bin/perl
+
+use strict;
+use List::Util qw(min max sum all any);
+
+my @shapes = (
+    [ [0,0], [1,0], [2,0], [3,0] ],         # Horizontal line
+    [ [0,1], [1,0], [1,1], [1,2], [2,1] ],  # Plus
+    [ [0,0], [1,0], [2,0], [2,1], [2,2] ],  # Backwards L
+    [ [0,0], [0,1], [0,2], [0,3] ],         # Vertical line
+    [ [0,0], [0,1], [1,0], [1,1] ]          # Square
+);
+
+my @chamber;   # the chamber is a 2D grid of 0s and 1s, Y first, then X
+my $chamberWidth = 7;
+
+sub checkCollision ($$$) {
+    # Check if a shape at a given position collides with anything in the
+    # chamber.  Return 1 if it does, 0 if it doesn't, and 1 if it's off
+    # the edge of the chamber.
+    my ($x, $y, $shape) = @_;
+    for my $coord (@$shape) {
+        my ($dx, $dy) = @$coord;
+        my ($px, $py) = ($x+$dx, $y+$dy);
+        # print "Checking ($dx,$dy) -> ($px, $py)\n";
+        return 1 if $px < 0 || $py < 0 || $px >= $chamberWidth;
+        return 1 if $chamber[$py][$px];
+    }
+    return 0;
+}
+
+sub placeShape ($$$) {
+    # Place a shape at a given position in the chamber.
+    my ($x, $y, $shape) = @_;
+    die "Can't place shape at $x, $y" if checkCollision($x, $y, $shape);
+    for my $coord (@$shape) {
+        my ($dx, $dy) = @$coord;
+        my ($px, $py) = ($x+$dx, $y+$dy);
+        # print "Placing shape at ($x,$y) => ($dx,$dy) -> ($px, $py)\n";
+        $chamber[$py][$px] = 1;
+        $chamber[$py][$chamberWidth - 1] //= 0;
+    }
+    return 1;
+}
+
+sub topY ($$) {
+    # Return the top Y coordinate of a shape at a given position
+    my ($y, $shape) = @_;
+    my $topY = 0;
+    for my $coord (@$shape) {
+        my ($dx, $dy) = @$coord;
+        $topY = max($topY, $y+$dy);
+    }
+    return $topY;
+}
+
+undef $/;
+my $test = 0;
+
+open (FILE, "input.txt")        if ($test == 0);
+open (FILE, "input_test.txt")   if ($test == 1);
+my $input = <FILE>;
+close (FILE);
+chomp $input;
+$input =~ tr/<>//cd;
+my @winds = split //, $input;
+my @moreWinds = @winds;
+
+my $currentRock = 0;
+my $rocksToFall = 1000000000000; # 2022;
+my $topY = -1;
+
+sub topToHash () {
+    # Turns the top nine rows of the chamber into a 64-bit hash
+    my $hash = 0;
+    for (my $i = 1; $i <= 9; ++$i) {
+        my $row = $chamber[-$i];
+        my @row = $row ? @$row : ();
+        $row[$chamberWidth - 1] //= 0;
+        $hash = ($hash << 1) + ($_ ? 1 : 0) foreach @row;
+    }
+    return $hash;
+}
+
+my %topForHash;
+my %rocknoForHash;
+
+my $leadIn = 5000;
+my $settled = $leadIn * 2;
+
+my $maxDelta = 0;
+my $lumps;
+for (my $i = 0; $i < $rocksToFall; ++$i) {
+    my ($x, $y) = (2, $topY + 4);
+    my $thisRock = $shapes[$currentRock++];
+    $currentRock = 0 if $currentRock > $#shapes;
+    my $falling = 1;
+    while ($falling) {
+        # First we're blown by the winds
+        my $wind = shift @winds;
+        @winds = @moreWinds unless @winds;
+        if ($wind eq '<') {
+            --$x;
+            ++$x if checkCollision($x, $y, $thisRock);
+        } elsif ($wind eq '>') {
+            ++$x;
+            --$x if checkCollision($x, $y, $thisRock);
+        } else {
+            die "Unknown wind direction $wind";
+        }
+        # Then we fall
+        --$y;
+        if (checkCollision($x, $y, $thisRock)) {
+            ++$y;
+            $falling = 0;
+            placeShape($x, $y, $thisRock);
+        }
+    }
+    $topY = max topY($y, $thisRock), $topY;
+    if (all { $_ } @{$chamber[$topY]}) {
+        print "Game over!  You made it to $i rocks\n";
+        exit;
+    }
+    if ($topY > 10) {
+        if ($i == $leadIn) {
+            $maxDelta = 0;
+        }
+        my $hash = topToHash();
+        my $lastY = $topForHash{$hash};
+        $topForHash{$hash} = $topY;
+        my $delta = defined $lastY ? $topY - $lastY : "NEW";
+        $maxDelta = max $maxDelta, $delta if defined $lastY;
+        $lastY //= "NEW";
+        my $lastRock = $rocknoForHash{$hash};
+        $rocknoForHash{$hash} = $i;
+        my $rockDelta = defined $lastRock ? $i - $lastRock : "NEW";
+        if (!defined $lumps and defined $lastRock && $i > $settled 
+            && $delta == $maxDelta && $i > 2*$rockDelta) {
+            my $distanceToGo = $rocksToFall - $i;
+            $lumps = int($distanceToGo / $rockDelta);
+            $rocksToFall -= $lumps * $rockDelta;
+        }
+    }
+}
+
+print "The top Y is ", ($topY+1) + $lumps * $maxDelta, "\n";
