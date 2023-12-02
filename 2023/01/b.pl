@@ -12,18 +12,6 @@ open (FILE, "input_test_b.txt")     if ($test == 1);
 chomp(my @input = <FILE>);
 close (FILE);
 
-my @num = (
-    'one',
-    'two',
-    'three',
-    'four',
-    'five',
-    'six',
-    'seven',
-    'eight',
-    'nine',
-);
-
 my $sum = 0;
 foreach my $line (@input) {
     #print "line: |" , $line , "|\n";
