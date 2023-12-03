@@ -22,7 +22,6 @@ my $total = 0;
 
 foreach my $line (@input) {
     my $possible = 1;
-    my %cube = ();
 
     #print "line: |" , $line , "|\n";
     $line = lc($line);
@@ -44,25 +43,13 @@ foreach my $line (@input) {
             if ($num > $limit{$color}) {
                 $possible = 0;
             }
-
-            #$cube{$color} += $num;
         }
     }
-
-    #print Dumper \%cube;
-    #print "\n";
-
-    #foreach my $color (sort keys %cube) {
-    #    if ($cube{$color} > $limit{$color}) {
-    #        $possible = 0;
-    #    }
-    #}
 
     if ($possible) {
         #print "possible!\n";
         $total += $game;
     }
-    #print "total: |" , $total , "|\n";
 
     #my $gak = <>;
 }
