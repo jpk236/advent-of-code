@@ -52,16 +52,23 @@ foreach my $race (sort { $a <=> $b } keys %races) {
     my $record = $races{$race}{'record'};     # millimeters
     my $winners = 0;
 
-    print "race: |" , $race , "|\n";
+    #print "race: |" , $race , "|\n";
     #print "duration: |" , $duration , "|\n";
     #print "record: |" , $record , "|\n";
     #print "\n";
 
-    for (my $charge = 0 ; $charge <= $duration ; $charge++) {
+    for (my $charge = $duration ; $charge >= 0 ; $charge--) {
+        # HACK
+        if ($charge == $duration) {
+            # 38981509 - start
+            # 10007574 - end
+            $charge = 10_007_578;
+        }
+
         my $speed = $charge;  # mm/ms
         my $distance = 0;
 
-        print "charge: |" , $charge , "|\n";
+        #print "charge: |" , $charge , "| \t |" , $winners , "|\n";
         #print "speed: |" , $speed , "|\n";
         #print "\n";
 
@@ -71,22 +78,22 @@ foreach my $race (sort { $a <=> $b } keys %races) {
             #print "turn: |" , $_ , "| \t |" , $distance , "|\n";
         }
 
-        #print "distance: |" , $distance , "|\n";
+        print "charge: |" , $charge , "| \t record: |" , $record , "| \t distance: |" , $distance , "| \t |" , $winners , "|\n";
 
         if ($distance > $record) {
             $winners++;
         }
 
-        if ($winners > 0 && $distance <= $record) {
-            last;
-        }
+        #if ($winners > 0 && $distance <= $record) {
+        #    last;
+        #}
 
         #my $gak = <>;
     }
 
     #print Dumper \%races;
     #print "\n";
-    
+
     print "winners: |" , $winners , "|\n";
 }
 
