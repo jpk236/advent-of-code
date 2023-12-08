@@ -53,7 +53,7 @@ foreach my $race (sort { $a <=> $b } keys %races) {
     #print "record: |" , $record , "|\n";
     #print "\n";
 
-    for (my $charge = 0 ; $charge <= $duration ; $charge++) {
+    for (my $charge = $duration ; $charge >= 0 ; $charge--) {
         my $speed = $charge;  # mm/ms
         my $distance = 0;
 
