@@ -20,38 +20,19 @@ my @left = ();
 my @right = ();
 
 foreach my $line (@input) {
-    #print "line: |" , $line , "|\n";
-
-    my ($l, $r) = split('   ', $line);
-
-    #print "l: |" , $l , "|\n";
-    #print "r: |" , $r , "|\n";
+    my ($l, $r) = split(/\s+/o, $line);
 
     push (@left, $l);
     push (@right, $r);
-
-    #my $gak = <>;
 }
 
 @left = sort {$a <=> $b} (@left);
 @right = sort {$a <=> $b} (@right);
 
-#print Dumper \@left;
-#print "\n";
-
-#print Dumper \@right;
-#print "\n";
-
 my $distance = 0;
 
 for (my $i = 0 ; $i < scalar @left ; $i++) {
-    #print "l: |" , $left[$i] , "|\n";
-    #print "r: |" , $right[$i] , "|\n";
-    #print "diff: |" , abs($left[$i] - $right[$i]) , "|\n";
-
     $distance += abs($left[$i] - $right[$i]);
-
-    #my $gak = <>;
 }
 
 print "distance: |" , $distance , "|\n";

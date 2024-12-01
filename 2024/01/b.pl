@@ -20,39 +20,21 @@ my @left = ();
 my @right = ();
 
 foreach my $line (@input) {
-    #print "line: |" , $line , "|\n";
-
-    my ($l, $r) = split('   ', $line);
-
-    #print "l: |" , $l , "|\n";
-    #print "r: |" , $r , "|\n";
+    my ($l, $r) = split(/\s+/o, $line);
 
     push (@left, $l);
     push (@right, $r);
-
-    #my $gak = <>;
 }
 
 @left = sort {$a <=> $b} (@left);
 @right = sort {$a <=> $b} (@right);
-
-#print Dumper \@left;
-#print "\n";
-
-#print Dumper \@right;
-#print "\n";
 
 my $score =  0;
 
 foreach my $id (@left) {
     my $count = grep $_ == $id, @right;
 
-    #print "id: |" , $id , "|\n";
-    #print "count: |" , $count , "|\n";
-
     $score += ($id * $count);
-
-    #my $gak = <>;
 }
 
 print "score: |" , $score , "|\n";
