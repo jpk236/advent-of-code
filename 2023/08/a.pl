@@ -19,7 +19,6 @@ close (FILE);
 
 my @instructions = split('', $input[0]);
 my %network = ();
-my @network = ();
 
 for (my $i = 2; $i < scalar @input ; $i++) {
     #print "line: |" , $input[$i] , "|\n";
