@@ -39,3 +39,4 @@ foreach my $id (@left) {
 
 print "score: |" , $score , "|\n";
 
+
